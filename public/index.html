@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Streaming Platform</title>
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts for Clean Typography -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Internal CSS for styling -->
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #1a1a1a;
+      color: white;
+      padding-top: 120px; /* Add space so content is not hidden under the banner */
+    }
+    .banner {
+      background-image: url('https://via.placeholder.com/1500x400'); /* Replace with your banner image */
+      background-size: cover;
+      background-position: center;
+      color: white;
+      text-align: center;
+      padding: 40px 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 999;
+    }
+    .banner-text {
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .streamer-item {
+      padding: 10px 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      background-color: #333;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .streamer-item:hover {
+      background-color: #555;
+      transform: scale(1.05);
+    }
+    .live-status {
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+    }
+    .live-status .dot {
+      height: 10px;
+      width: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .live-status .live {
+      background-color: green;
+    }
+    .live-status .offline {
+      background-color: red;
+    }
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+    .streamer-list {
+      width: 25%;
+      overflow-y: auto;
+      padding: 20px;
+      background-color: #222;
+      border-right: 2px solid #444;
+    }
+    .main-content {
+      width: 75%;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .video-player {
+      width: 100%;
+      height: 70%;
+      background-color: #000;
+      border-radius: 8px;
+    }
+    .chat-box {
+      width: 100%;
+      height: 30%;
+      background-color: #333;
+      margin-top: 15px;
+      border-radius: 8px;
+      position: relative;
+    }
+    .pop-out-chat {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #555;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .pop-out-chat:hover {
+      background-color: #777;
+    }
+  </style>
+</head>
+<body>
+  <!-- Banner Section -->
+  <div class="banner">
+    <p class="banner-text">Welcome to Our Live Streaming Platform! 🎥</p>
+    <p>Join your favorite streamers live right now! 🔥</p>
+  </div>
+
+  <div class="container">
+    <div class="streamer-list" id="streamerList">
+      <!-- Streamer items will be dynamically added here -->
+    </div>
+    <div class="main-content">
+      <div class="video-player" id="videoPlayer">
+        <!-- Video player will be dynamically added here -->
+      </div>
+      <div class="chat-box" id="chatBox">
+        <button class="pop-out-chat" onclick="popOutChat()">Pop Out Chat</button>
+        <!-- Chat will be dynamically added here -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const streamers = [
+      { name: 'FarCar', channelId: 'UC3XLpGsH9B6aunwDpX2043Q' },
+      { name: 'StreamerX', channelId: 'UCxQkjcFlF5xg6s5g8Zw29n7' },
+      { name: 'GamingLive', channelId: 'UCZJpMmmjFZ40f2tpg2J0P7z' },
+      // Add more streamers here
+    ];
+
+    const streamerList = document.getElementById('streamerList');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const chatBox = document.getElementById('chatBox');
+
+    // Function to check if a streamer is live and get the number of viewers
+    async function checkLiveStatus(channelId) {
+      const response = await fetch(`http://localhost:4040/check-live?channelId=${channelId}`);
+      const data = await response.json();
+      return data;
+    }
+
+    // Function to load the streamer list
+    async function loadStreamerList() {
+      for (const streamer of streamers) {
+        const { isLive, viewers, streamTitle } = await checkLiveStatus(streamer.channelId);
+        const streamerItem = document.createElement('div');
+        streamerItem.className = 'streamer-item';
+        streamerItem.innerHTML = `
+          <span class="streamer-name">${streamer.name}</span>
+          <span class="live-status">
+            <span class="dot ${isLive ? 'live' : 'offline'}"></span>
+            ${isLive ? `${viewers} viewers` : 'OFFLINE'}
+          </span>
+        `;
+        streamerItem.addEventListener('click', () => loadStreamerContent(streamer.channelId, streamTitle));
+        streamerList.appendChild(streamerItem);
+      }
+    }
+
+    // Function to load the streamer content (video and chat)
+    function loadStreamerContent(channelId, streamTitle) {
+      videoPlayer.innerHTML = ` 
+        <iframe width="100%" height="100%" src="https://www.youtube.com/embed/live_stream?channel=${channelId}" frameborder="0" allowfullscreen></iframe>
+      `;
+      chatBox.innerHTML = ` 
+        <iframe width="100%" height="100%" src="https://www.youtube.com/live_chat?v=${channelId}&embed_domain=${window.location.hostname}" frameborder="0"></iframe>
+        <button class="pop-out-chat" onclick="popOutChat('${channelId}')">Pop Out Chat</button>
+      `;
+    }
+
+    // Function to pop out the chat
+    function popOutChat(channelId) {
+      window.open(`https://www.youtube.com/live_chat?v=${channelId}&embed_domain=${window.location.hostname}`, '_blank', 'width=400,height=600');
+    }
+
+    // Load the streamer list on page load
+    window.onload = loadStreamerList;
+  </script>
+</body>
+</html>
